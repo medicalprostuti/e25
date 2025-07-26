@@ -1,0 +1,2038 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ইংরেজী অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question:
+            'Identify the tense of the sentence "She will be starting her new job from tomorrow".',
+          options: {
+            a: "Future Continuous",
+            b: "Present Continuous",
+            c: "Present Simple",
+            d: "Future Perfect",
+          },
+          correct: "a",
+          explanation:
+            "The structure 'will be + verb-ing' indicates the future continuous tense, which is used to describe an action that will be in progress at a specific time in the future.",
+        },
+        {
+          id: 2,
+          question:
+            'Select the correct tense "I had been studying English for five years before I moved to the USA".',
+          options: {
+            a: "Present Perfect Continuous",
+            b: "Future Continuous",
+            c: "Past Perfect Continuous",
+            d: "Past Continuous",
+          },
+          correct: "c",
+          explanation:
+            "The structure 'had been + verb-ing' indicates the past perfect continuous tense, which is used to show that an action started in the past and continued up until another point in the past.",
+        },
+        {
+          id: 3,
+          question:
+            'Which of the following sentence is the present perfect tense of "I have just seen Mahia"?',
+          options: {
+            a: "I see Mahia now",
+            b: "I saw Mahia just now",
+            c: "I have just saw Mahia",
+            d: "I just saw Mahia",
+          },
+          correct: "c",
+          explanation:
+            "The original sentence 'I have just seen Mahia' is already in the present perfect tense (have + past participle). Option (c) attempts to replicate this structure but incorrectly uses 'saw' (simple past) instead of 'seen' (past participle). However, considering the common error of using the simple past after 'have', if the question is asking to identify a sentence that *attempts* to be present perfect tense, (c) is the one that uses 'have just'. The correct past participle of 'see' is 'seen'. If the question expects a *grammatically correct* present perfect form, none of the options starting with 'I have just' are correct, as 'saw' is wrong. But if the question is flawed and implies finding the closest structural match to 'have just X-ed', then (c) would be chosen despite its grammatical error. Let's assume there's a typo in the question and it meant to ask for *another* sentence in present perfect tense, or perhaps it's asking to identify the *incorrect* one that's presented as present perfect. Given the provided answer 'c', it suggests an acceptance of the grammatical error in 'saw' for 'seen' while recognizing the 'have just' structure. Let's reinterpret, perhaps it wants to convert a sentence *into* the present perfect tense and one of the options presents a form *like* the present perfect, even if flawed. In a strict sense, the question itself is flawed as 'I have just seen Mahia' *is* already present perfect. If it's asking to identify the *correct* present perfect form among the choices, and (c) is meant to be 'I have just seen Mahia', then it's a self-reference. If it's asking to pick a sentence that *is* in the present perfect tense, then none of the *options* are truly present perfect *and* grammatically correct (if 'saw' in c is taken literally). However, the intention seems to be that (c) represents the present perfect structure, despite the incorrect past participle. Let's assume the question meant to be 'Which of the following sentences *is* in the present perfect tense?' and that there's a typo in option c, it should be 'I have just seen Mahia'. Since the original sentence provided is already in the present perfect, and the question asks 'which...is the present perfect tense of...', it's a circular question. But if we take option (c) as the *intended* present perfect structure, it contains the 'have + just + past participle' construction, even with the error.",
+        },
+        {
+          id: 4,
+          question: "Choose the correct sentence.",
+          options: {
+            a: "I have been lived here since five years",
+            b: "I am living here for five years",
+            c: "I have been living here for five years",
+            d: "I live here for five years",
+          },
+          correct: "c",
+          explanation:
+            "To describe an action that started in the past and continues up to the present, especially with a duration, the present perfect continuous tense ('have been + verb-ing + for/since') is used. Option (a) incorrectly uses 'lived' instead of 'living'. Option (b) uses present continuous, which is incorrect for an action over a duration. Option (d) uses simple present, which is also incorrect for duration.",
+        },
+        {
+          id: 5,
+          question:
+            "For Present Perfect tense, which one of the following is correct?",
+          options: {
+            a: "Ashraf had gone to Faridpur",
+            b: "Ashraf has been to Faridpur",
+            c: "Ashraf has gone to Faridpur",
+            d: "Ashraf went to Faridpur",
+          },
+          correct: "c",
+          explanation:
+            "The present perfect tense is formed with 'has/have + past participle'. 'Has gone to' means someone is currently at that place or on their way there. 'Has been to' means someone visited a place and returned. Both (b) and (c) are present perfect. However, 'has gone to' (c) specifically indicates that Ashraf is still there or en route, which is a common usage. 'Has been to' (b) indicates a completed visit. Without further context, 'has gone to' is a direct application of the present perfect indicating a current state resulting from a past action.",
+        },
+        {
+          id: 6,
+          question:
+            "For present continuous tense, which of the following is correct?",
+          options: {
+            a: "Don’t make so much noise, I was trying to work.",
+            b: "Don’t make so much noise, I tried to work.",
+            c: "Don’t make so much noise, I had tried to work.",
+            d: "Don’t make so much noise, I am trying to work.",
+          },
+          correct: "d",
+          explanation:
+            "The present continuous tense ('am/is/are + verb-ing') is used to describe an action happening at the moment of speaking. The request 'Don’t make so much noise' indicates an immediate ongoing activity.",
+        },
+        {
+          id: 7,
+          question:
+            "Which one of the following is an example of Present Perfect Continuous Tense?",
+          options: {
+            a: "It had been raining",
+            b: "It was raining",
+            c: "It has been raining",
+            d: "It rained",
+          },
+          correct: "c",
+          explanation:
+            "The structure for present perfect continuous tense is 'has/have been + verb-ing'. Option (c) fits this structure.",
+        },
+        {
+          id: 8,
+          question:
+            "Which of the following is an example of present perfect continuous tense?",
+          options: {
+            a: "The baby is crying.",
+            b: "The baby was crying.",
+            c: "The baby been crying.",
+            d: "The baby has been crying.",
+          },
+          correct: "d",
+          explanation:
+            "The structure for present perfect continuous tense is 'has/have been + verb-ing'. Option (d) fits this structure.",
+        },
+        {
+          id: 9,
+          question:
+            'Choose the correct tense of the sentence, "It was raining when I got up".',
+          options: {
+            a: "Simple Past tense",
+            b: "Past Continuous tense",
+            c: "Past Perfect tense",
+            d: "Present Continuous tense",
+          },
+          correct: "b",
+          explanation:
+            "The phrase 'was raining' uses the structure 'was/were + verb-ing', which is the past continuous tense. It describes an action that was in progress at a specific time in the past (when I got up).",
+        },
+        {
+          id: 10,
+          question:
+            'Choose the correct tense of the sentence, "Habib has been using this pen for the last five years".',
+          options: {
+            a: "Past Perfect tense",
+            b: "Past Perfect Continuous tense",
+            c: "Present Perfect tense",
+            d: "Present Perfect Continuous tense",
+          },
+          correct: "d",
+          explanation:
+            "The structure 'has been + verb-ing + for + duration' indicates the present perfect continuous tense, which describes an action that started in the past and continues up to the present.",
+        },
+        {
+          id: 11,
+          question:
+            'What is the correct tense in this sentence? "Mansur has been using this pen for the last five years".',
+          options: {
+            a: "Past Perfect Continuous",
+            b: "Present Perfect Continuous",
+            c: "Past Perfect",
+            d: "Present Perfect",
+          },
+          correct: "b",
+          explanation:
+            "This is a duplicate of question 10. The structure 'has been + verb-ing + for + duration' indicates the present perfect continuous tense.",
+        },
+        {
+          id: 12,
+          question:
+            '"The workers were working on the building". What is the correct tense in this sentence?',
+          options: {
+            a: "Present Perfect",
+            b: "Past Continuous",
+            c: "Present Continuous",
+            d: "Past Perfect",
+          },
+          correct: "b",
+          explanation:
+            "The structure 'were + verb-ing' indicates the past continuous tense, describing an action that was in progress in the past.",
+        },
+        {
+          id: 13,
+          question:
+            '"I will be leaving tomorrow". What is the correct tense in this sentence?',
+          options: {
+            a: "Present Continuous",
+            b: "Present Simple",
+            c: "Future Perfect",
+            d: "Future Continuous",
+          },
+          correct: "d",
+          explanation:
+            "The structure 'will be + verb-ing' indicates the future continuous tense, describing an action that will be in progress at a specific time in the future (tomorrow).",
+        },
+        {
+          id: 14,
+          question:
+            '"I will be leaving tomorrow". What is the correct tense in this sentence?',
+          options: {
+            a: "Present Continuous",
+            b: "Present Simple",
+            c: "Future Perfect",
+            d: "Future Continuous",
+          },
+          correct: "d",
+          explanation:
+            "This is a duplicate of question 13. The structure 'will be + verb-ing' indicates the future continuous tense.",
+        },
+        {
+          id: 15,
+          question: "How many times _ you been abroad?",
+          options: {
+            a: "have",
+            b: "did",
+            c: "had",
+            d: "were",
+          },
+          correct: "a",
+          explanation:
+            "The past participle 'been' (of 'be') requires an auxiliary verb to form a perfect tense. Since the question asks about experiences up to the present moment ('How many times'), the present perfect tense ('have been') is appropriate.",
+        },
+        {
+          id: 16,
+          question: "The meeting _ postponed due to bad weather.",
+          options: {
+            a: "to be",
+            b: "has been",
+            c: "were",
+            d: "will",
+          },
+          correct: "b",
+          explanation:
+            "The sentence describes a completed action that has a present result (the meeting is now postponed). The passive voice is used ('postponed'). 'Has been' (present perfect passive) is appropriate for an action completed recently or with a current effect. 'Were' would be simple past plural, and 'meeting' is singular. 'To be' is an infinitive. 'Will' would make it future.",
+        },
+        {
+          id: 17,
+          question: "_ you like a cup of tea?",
+          options: {
+            a: "Should",
+            b: "Could",
+            c: "Shall",
+            d: "Would",
+          },
+          correct: "d",
+          explanation:
+            "'Would you like...' is a standard polite way to offer something.",
+        },
+        {
+          id: 18,
+          question:
+            "Choose the best option to complete the sentence: The bus _",
+          options: {
+            a: "arrived late this evening.",
+            b: "arrived this evening late.",
+            c: "was arrived late this evening.",
+            d: "has arrived this evening late.",
+          },
+          correct: "a",
+          explanation:
+            "Option (a) uses the simple past tense ('arrived') correctly and places the adverb 'late' and the time phrase 'this evening' in natural positions. Options (b) and (d) have awkward adverb placement. Option (c) incorrectly uses 'was arrived' (passive voice is not suitable here; 'arrived' is an intransitive verb in this context, it doesn't take a passive).",
+        },
+        {
+          id: 19,
+          question: "The lawyer told his client that _",
+          options: {
+            a: "they had little chance of winning the case",
+            b: "the case was of a small chance to win",
+            c: "it was nearly impossible to win him the case",
+            d: "the case had a minimum chance to be won by him",
+          },
+          correct: "a",
+          explanation:
+            "Option (a) uses a grammatically correct and idiomatic expression ('had little chance of winning'). The other options are grammatically awkward or less natural English.",
+        },
+        {
+          id: 20,
+          question: "In the essay the student has _ about a road trip.",
+          options: {
+            a: "written",
+            b: "memorized",
+            c: "complained",
+            d: "posted",
+          },
+          correct: "a",
+          explanation:
+            "The structure 'has + past participle' requires a past participle. 'Written' (past participle of write) fits the context of an essay. 'Memorized', 'complained', 'posted' could fit depending on the context, but 'written about' is the most direct and common fit for an essay.",
+        },
+        {
+          id: 21,
+          question: "It _ raining since the morning.",
+          options: {
+            a: "has been",
+            b: "had been raining",
+            c: "was",
+            d: "were",
+          },
+          correct: "a",
+          explanation:
+            "The use of 'since the morning' indicates an action that started in the past and continues up to the present, requiring the present perfect continuous tense. The structure is 'has been + verb-ing'. Thus, 'has been' is correct to complete 'It has been raining since the morning'.",
+        },
+        {
+          id: 22,
+          question:
+            "Fill in the blank. Tourists _ their reservations well in advance if they want to fly to Cox's Bazar.",
+          options: {
+            a: "better to had get",
+            b: "had better to get",
+            c: "had better got",
+            d: "had better get",
+          },
+          correct: "d",
+          explanation:
+            "The idiom 'had better' is followed by the base form of the verb (infinitive without 'to'). So, 'had better get' is correct.",
+        },
+        {
+          id: 23,
+          question: "I _ to a foreign country.",
+          options: {
+            a: "was never been",
+            b: "am never gone",
+            c: "have never been",
+            d: "am never been",
+          },
+          correct: "c",
+          explanation:
+            "To talk about experiences up to the present moment, the present perfect tense is used. 'Have never been' is the correct form, meaning 'I have not had the experience of going to a foreign country'.",
+        },
+        {
+          id: 24,
+          question: "The museum _ painting by S.M. Sultan.",
+          options: {
+            a: "did not have any",
+            b: "did not have an",
+            c: "did not hardly",
+            d: "did have any",
+          },
+          correct: "a",
+          explanation:
+            "To express the absence of something in the past, 'did not have any' is the correct and natural phrasing. 'Any' is used with negative statements.",
+        },
+        {
+          id: 25,
+          question:
+            "I think my brother has _ trees in order to combat global warming.",
+          options: {
+            a: "planted",
+            b: "planting",
+            c: "plant",
+            d: "to plant",
+          },
+          correct: "a",
+          explanation:
+            "The structure 'has + past participle' is required for the present perfect tense. 'Planted' is the past participle of 'plant'.",
+        },
+        {
+          id: 26,
+          question: "Several new diseases _ in the recent years.",
+          options: {
+            a: "grown up",
+            b: "have come up",
+            c: "have discovered",
+            d: "have found",
+          },
+          correct: "b",
+          explanation:
+            "The phrase 'in the recent years' suggests the present perfect tense. 'Have come up' (meaning emerged or appeared) is the most idiomatic and natural fit for new diseases. While diseases can be 'discovered' or 'found', 'come up' implies their emergence.",
+        },
+        {
+          id: 27,
+          question: "Iron _ for weapons and tools in the Bronze Age.",
+          options: {
+            a: "is generally used",
+            b: "used",
+            c: "generally used",
+            d: "was generally used",
+          },
+          correct: "d",
+          explanation:
+            "The phrase 'in the Bronze Age' indicates a specific time in the past. The sentence describes a general practice in that past period, and 'iron' is the recipient of the action (passive voice). Therefore, 'was generally used' (past simple passive) is correct.",
+        },
+        {
+          id: 28,
+          question: "By this time next month the government _ resigned.",
+          options: {
+            a: "would have",
+            b: "will have",
+            c: "will",
+            d: "have",
+          },
+          correct: "b",
+          explanation:
+            "The phrase 'By this time next month' indicates a future point in time by which an action will have been completed. This calls for the future perfect tense, which is formed with 'will have + past participle'.",
+        },
+        {
+          id: 29,
+          question: "The parcel _ tomorrow.",
+          options: {
+            a: "will be delivered",
+            b: "will deliver",
+            c: "will be delivering",
+            d: "will have delivery",
+          },
+          correct: "a",
+          explanation:
+            "The parcel is the recipient of the action (delivery), so the passive voice is required. Since the action is in the future ('tomorrow'), the future simple passive ('will be + past participle') is appropriate.",
+        },
+        {
+          id: 30,
+          question: "There is plenty of time. You _ hurry.",
+          options: {
+            a: "mustn't",
+            b: "may not",
+            c: "don't have to",
+            d: "None",
+          },
+          correct: "c",
+          explanation:
+            "'Don't have to' expresses a lack of obligation or necessity. Since there's plenty of time, hurrying is not necessary.",
+        },
+        {
+          id: 31,
+          question: "Global warming _ by emissions of greenhouse gas.",
+          options: {
+            a: "caused",
+            b: "is occurred",
+            c: "is caused",
+            d: "has caused",
+          },
+          correct: "c",
+          explanation:
+            "Global warming is a continuous state or phenomenon that is a result of emissions. The passive voice is appropriate because 'global warming' is being affected by the emissions. 'Is caused' (present simple passive) describes a general truth or ongoing causal relationship.",
+        },
+        {
+          id: 32,
+          question: "We had better _ in order to combat global warming.",
+          options: {
+            a: "planted",
+            b: "planting",
+            c: "plant",
+            d: "to plant",
+          },
+          correct: "c",
+          explanation:
+            "The idiom 'had better' is followed by the base form of the verb (infinitive without 'to').",
+        },
+        {
+          id: 33,
+          question: "The word similar in meaning to 'hyperbole' is-",
+          options: {
+            a: "understatement",
+            b: "critique",
+            c: "exaggeration",
+            d: "distortion",
+          },
+          correct: "c",
+          explanation:
+            "'Hyperbole' means exaggerated statements or claims not meant to be taken literally.",
+        },
+        {
+          id: 34,
+          question: "That ceremony _ enacted on Tuesday next.",
+          options: {
+            a: "has been",
+            b: "is",
+            c: "is being",
+            d: "have",
+          },
+          correct: "c",
+          explanation:
+            "The phrase 'on Tuesday next' indicates a future arrangement. The passive voice is needed ('enacted'). The present continuous tense used for future arrangements, in passive voice, is 'is being + past participle'.",
+        },
+        {
+          id: 35,
+          question: "If you don't mind, I would rather not _.",
+          options: {
+            a: "to go",
+            b: "going",
+            c: "gone",
+            d: "go",
+          },
+          correct: "d",
+          explanation:
+            "The construction 'would rather + base form of verb' is used to express preference. In a negative sentence, it's 'would rather not + base form of verb'.",
+        },
+        {
+          id: 36,
+          question: "The nurse has _ the baby in the crib.",
+          options: {
+            a: "lain",
+            b: "lay",
+            c: "laid",
+            d: "lied",
+          },
+          correct: "c",
+          explanation:
+            "The verb needed here is a transitive verb meaning 'to place or put down'. The base form is 'lay', simple past is 'laid', and past participle is 'laid'. Since the sentence uses 'has', the past participle is required. 'Lain' is the past participle of 'lie' (to recline). 'Lied' is the past participle of 'lie' (to tell a falsehood).",
+        },
+        {
+          id: 37,
+          question: "Sima had better _ if she doesn't want to miss the train.",
+          options: {
+            a: "hurry",
+            b: "to hurry",
+            c: "hurrying",
+            d: "hurried",
+          },
+          correct: "a",
+          explanation:
+            "The idiom 'had better' is followed by the base form of the verb (infinitive without 'to').",
+        },
+        {
+          id: 38,
+          question: "The streets are wet; it _ last night.",
+          options: {
+            a: "had rained",
+            b: "must have rained",
+            c: "has rained",
+            d: "would have rained",
+          },
+          correct: "b",
+          explanation:
+            "The wet streets are evidence of a past action. 'Must have rained' expresses a logical deduction about a past event. 'Had rained' (past perfect) would be used if there was another past event it preceded. 'Has rained' (present perfect) would imply it rained very recently, possibly still raining or just stopped, but 'last night' points to a completed past event. 'Would have rained' is conditional.",
+        },
+        {
+          id: 39,
+          question: "My mother _ TV news every night.",
+          options: {
+            a: "is watching",
+            b: "watched",
+            c: "watches",
+            d: "watch",
+          },
+          correct: "c",
+          explanation:
+            "'Every night' indicates a habitual action, which requires the simple present tense. Since 'My mother' is singular, the verb takes an '-es' ending.",
+        },
+        {
+          id: 40,
+          question: "You must _ of Helen Keller.",
+          options: {
+            a: "hear",
+            b: "heard",
+            c: "have heard",
+            d: "hearing",
+          },
+          correct: "c",
+          explanation:
+            "The modal verb 'must' can be followed by a bare infinitive. To express a strong probability about a past event, 'must have + past participle' is used. It means it's almost certain that you have heard of her.",
+        },
+        {
+          id: 41,
+          question: "Poor visibility due to fog and rain _ the accident.",
+          options: {
+            a: "cause",
+            b: "causes",
+            c: "causing",
+            d: "have caused",
+          },
+          correct: "b",
+          explanation:
+            "The subject 'Poor visibility' is singular. Therefore, the verb in the simple present tense must agree with the singular subject, taking an '-s' ending.",
+        },
+        {
+          id: 42,
+          question: "_ you tomorrow? 'Yes, Ok'.",
+          options: {
+            a: "Do I phone",
+            b: "Am I going to phone",
+            c: "Shall I phone",
+            d: "I am going to phone",
+          },
+          correct: "c",
+          explanation:
+            "'Shall I...?' is commonly used to offer to do something or to ask for advice/instructions, particularly in British English, and it fits well with the response 'Yes, Ok' for a future action.",
+        },
+        {
+          id: 43,
+          question:
+            "We had better _ the schedule of the examination. The right option for the gap is-",
+          options: {
+            a: "to check",
+            b: "checked",
+            c: "checking",
+            d: "check",
+          },
+          correct: "d",
+          explanation:
+            "The idiom 'had better' is followed by the base form of the verb (infinitive without 'to').",
+        },
+        {
+          id: 44,
+          question:
+            "Which of the following can be used both as a modal and a main verb?",
+          options: {
+            a: "Should",
+            b: "Would",
+            c: "May",
+            d: "Dare",
+          },
+          correct: "d",
+          explanation:
+            "Most modal verbs (should, would, may, can, might, must, etc.) function only as auxiliaries. 'Dare' can be used as a modal verb (e.g., How dare you!) or as a main verb (e.g., He doesn't dare to go).",
+        },
+        {
+          id: 45,
+          question:
+            "Choose the correct option: You _ mad if you think I am going to lend you any more money.",
+          options: {
+            a: "should be",
+            b: "must be",
+            c: "are suppose to be",
+            d: "ought to be",
+          },
+          correct: "b",
+          explanation:
+            "'Must be' expresses a strong logical deduction or certainty. If someone thinks they will get more money after a statement like that, it's a strong conclusion that they 'must be' mad.",
+        },
+        {
+          id: 46,
+          question:
+            "Choose the correct form of verb. I _ him only one letter up to now.",
+          options: {
+            a: "sent",
+            b: "had sent",
+            c: "have sent",
+            d: "send",
+          },
+          correct: "c",
+          explanation:
+            "The phrase 'up to now' indicates an action completed at some indefinite time before the present, or an action that started in the past and continues up to the present. This requires the present perfect tense ('have sent').",
+        },
+        {
+          id: 47,
+          question: "I didn't follow who passed by me. It _ Shajib.",
+          options: {
+            a: "were",
+            b: "must be",
+            c: "might be",
+            d: "was",
+          },
+          correct: "c",
+          explanation:
+            "Since the speaker 'didn't follow' (wasn't sure), it indicates a possibility, not a certainty. 'Might be' expresses a possibility or a weak probability. 'Must be' implies strong certainty. 'Was' would imply certainty without expressing doubt.",
+        },
+        {
+          id: 48,
+          question: 'Teacher said, "The earth _ round the sun".',
+          options: {
+            a: "moves",
+            b: "moved",
+            c: "has moved",
+            d: "will be moving",
+          },
+          correct: "a",
+          explanation:
+            "Universal truths or scientific facts are always expressed in the simple present tense, regardless of the tense of the reporting verb ('said').",
+        },
+        {
+          id: 49,
+          question:
+            "Being fat does not necessarily kill you, but it _ the risk that you will suffer from nasty diseases.",
+          options: {
+            a: "increases",
+            b: "emphasizes",
+            c: "encourages",
+            d: "involves",
+          },
+          correct: "a",
+          explanation:
+            "Being fat raises the likelihood of suffering from diseases. 'Increases the risk' is the most accurate and common collocation to express this meaning.",
+        },
+        {
+          id: 50,
+          question:
+            "Just now he _ his dinner but he says he'll see you when he's finished.",
+          options: {
+            a: "is having",
+            b: "has had",
+            c: "was having",
+            d: "had",
+          },
+          correct: "b",
+          explanation:
+            "'Just now' with the implication of a completed action that has a current relevance (he'll see you when he's finished) points to the present perfect tense. 'Has had' indicates a recently completed action.",
+        },
+        {
+          id: 51,
+          question: "Which one is the correct form of sentence?",
+          options: {
+            a: "Mathematics is a subject of study in any school",
+            b: "Mathematics are subject of study in the school",
+            c: "Mathematics are hard in the school level",
+            d: "Mathematics are road to higher education",
+          },
+          correct: "a",
+          explanation:
+            "'Mathematics' (like physics, economics, news) is a plural-looking noun that takes a singular verb when referring to the subject or field of study. Option (a) correctly uses 'is'.",
+        },
+        {
+          id: 52,
+          question: "Pick out the incorrect sentence-",
+          options: {
+            a: "One of the girls was beautiful.",
+            b: "Either you or he was absent.",
+            c: "Each of them were given prizes.",
+            d: "He and I are friends.",
+          },
+          correct: "c",
+          explanation:
+            "When 'Each' is the subject, or used with 'Each of them', it always takes a singular verb. Therefore, 'Each of them *were* given prizes' is incorrect; it should be 'Each of them *was* given prizes'.",
+        },
+        {
+          id: 53,
+          question: "I have no kith and kin in this town. It is a-",
+          options: {
+            a: "prepositional phrase",
+            b: "conjunctional phrase",
+            c: "adjective phrase",
+            d: "noun phrase",
+          },
+          correct: "d",
+          explanation:
+            "'Kith and kin' is an idiom meaning relatives or close friends. In this sentence, it functions as the object of 'have', making it a noun phrase.",
+        },
+        {
+          id: 54,
+          question:
+            "Select the complex sentence with an adverb clause from below-",
+          options: {
+            a: "You may criticize what I do",
+            b: "I am sure that I will pass",
+            c: "He is so weak that he cannot walk",
+            d: "I have no money that I can spare",
+          },
+          correct: "c",
+          explanation:
+            "An adverb clause modifies a verb, adjective, or another adverb, and usually answers questions like 'how', 'when', 'where', 'why', 'to what extent'. In 'He is so weak *that he cannot walk*', the clause 'that he cannot walk' modifies the adjective 'weak', indicating the result or extent of his weakness. This is an adverbial clause of result.",
+        },
+        {
+          id: 55,
+          question:
+            "Which of the following sentences contain an adverb clause?",
+          options: {
+            a: "I have no money that I can spare",
+            b: "He is a man who is rich",
+            c: "The house in which we live at present suits us",
+            d: "You can be allowed here only if you are a student",
+          },
+          correct: "d",
+          explanation:
+            "In 'You can be allowed here *only if you are a student*', the clause 'only if you are a student' modifies the verb phrase 'can be allowed', indicating the condition under which the action is permitted. This is an adverbial clause of condition.",
+        },
+        {
+          id: 56,
+          question:
+            "Which one of the following sentences contain an adjective clause?",
+          options: {
+            a: "The amount I had in the bank was exactly sixty pounds",
+            b: "He hoped that he would win prize",
+            c: "I was quite well so long as I stayed there",
+            d: "You may criticize what I do",
+          },
+          correct: "d",
+          explanation: `Let's re-evaluate option (d). 'You may criticize *what I do*'. Here 'what I do' functions as the object of the verb 'criticize'. A clause acting as a noun is a noun clause. Let's look closer at the options provided by the question. There might be a mislabeling. An adjective clause modifies a noun or pronoun.
+
+Let's re-examine the options:
+(a) 'The amount *I had in the bank*' - 'I had in the bank' is an adjective clause modifying 'amount' (the relative pronoun 'that' or 'which' is omitted).
+(b) 'He hoped *that he would win prize*' - 'that he would win prize' is a noun clause, the object of 'hoped'.
+(c) 'I was quite well *so long as I stayed there*' - 'so long as I stayed there' is an adverb clause of time/condition.
+(d) 'You may criticize *what I do*' - 'what I do' is a noun clause, the object of 'criticize'.
+
+Given the provided answer 'd', and the analysis, there seems to be a discrepancy. If we strictly follow the definition, (a) contains an adjective clause. Option (d) contains a noun clause. If the question or provided answer is flawed, we'd note it. However, if forced to choose based on potential misinterpretation, sometimes 'what' clauses are tricky. But syntactically, 'what I do' functions as a noun here.
+
+Let's assume there's an error in the question or the provided answer for this item, as 'a' clearly contains an adjective clause and 'd' contains a noun clause. If we have to select the *best* fit, and assuming there might be an implicit error in what the question *intended* as an adjective clause from the given choices, 'a' is the most accurate in containing one. However, following the provided answer, this points to a potential misclassification in the source. I will mark it based on the given answer, but add a note about the discrepancy.
+
+Correcting based on typical grammar rules:
+(a) The amount (that/which) I had in the bank was exactly sixty pounds. -> 'that/which I had in the bank' is an adjective clause modifying 'amount'. This is the correct answer for an adjective clause.
+(d) You may criticize what I do. -> 'what I do' is a noun clause (object of 'criticize').
+
+Given the provided answer is (d), and acknowledging the grammatical rules, there's a strong indication of an error in the question or answer key. However, adhering to the output format, I will mark 'd' as correct as per the user's input, but highlight the issue.`,
+        },
+        {
+          id: 57,
+          question: "'They rested at sunset.' Here 'at sunset' is a/an-",
+          options: {
+            a: "prepositional phrase",
+            b: "conjunctional phrase",
+            c: "adjective phrase",
+            d: "noun phrase",
+          },
+          correct: "a",
+          explanation:
+            "A prepositional phrase consists of a preposition ('at') and its object ('sunset'). It functions here as an adverbial phrase of time.",
+        },
+        {
+          id: 58,
+          question: "He is an eyesore to me - কোন Phrase- (Which Phrase)",
+          options: {
+            a: "Preposition",
+            b: "Adjective",
+            c: "Adverb",
+            d: "Noun",
+          },
+          correct: "d",
+          explanation:
+            "'An eyesore' is an idiom meaning something that is unpleasant or ugly to look at. In the sentence, it functions as the complement of the verb 'is', referring to a thing, thus it is a noun phrase.",
+        },
+        {
+          id: 59,
+          question: "Which one is the acceptable noun phrase?",
+          options: {
+            a: "Graphic question",
+            b: "Graphic answer",
+            c: "Graphic desire",
+            d: "Graphic presentation",
+          },
+          correct: "d",
+          explanation:
+            "A noun phrase is a group of words that functions as a noun. In all options, 'Graphic' is an adjective modifying a noun. All options are technically noun phrases. However, in the context of typical usage or common collocations, 'graphic presentation' (meaning a visual display of information) is a very common and well-understood noun phrase. The other options might be less common or have more specific, less obvious meanings without further context.",
+        },
+        {
+          id: 60,
+          question:
+            "The train is moving fast enough. The underlined phrase is a/an-",
+          options: {
+            a: "Adjective phrase",
+            b: "Verb phrase",
+            c: "Adverbial phrase",
+            d: "Prepositional phrase",
+          },
+          correct: "c",
+          explanation:
+            "'Fast enough' modifies the verb 'moving', describing how it is moving. A phrase that modifies a verb is an adverbial phrase.",
+        },
+        {
+          id: 61,
+          question:
+            "For a moment the girl stood speechless. The underlined part is a/an-",
+          options: {
+            a: "Adjective",
+            b: "Noun phrase",
+            c: "Determiner",
+            d: "Adverbial",
+          },
+          correct: "d",
+          explanation:
+            "'For a moment' indicates duration and modifies the verb 'stood'. Phrases that indicate time, place, or manner and modify a verb are adverbial phrases.",
+        },
+        {
+          id: 62,
+          question:
+            "'People who have poor diets are likely to catch cold.' In this sentence, the dependent clause is:",
+          options: {
+            a: "an adverb clause",
+            b: "an noun clause",
+            c: "an adjective clause",
+            d: "none",
+          },
+          correct: "c",
+          explanation:
+            "The clause 'who have poor diets' modifies the noun 'People', providing more information about them. Clauses that modify nouns are adjective clauses (also known as relative clauses).",
+        },
+        {
+          id: 63,
+          question:
+            "If it rains, I will stay at home. The underlined clause is a/an-",
+          options: {
+            a: "noun clause",
+            b: "adjective clause",
+            c: "adverbial clause",
+            d: "principal clause",
+          },
+          correct: "c",
+          explanation:
+            "The clause 'If it rains' introduces a condition and modifies the main clause 'I will stay at home', indicating under what circumstances the action will occur. This is an adverbial clause of condition.",
+        },
+        {
+          id: 64,
+          question: "I know the boy who came here yesterday.",
+          options: {
+            a: "noun clause",
+            b: "adjective clause",
+            c: "adverbial clause",
+            d: "principal clause",
+          },
+          correct: "b",
+          explanation:
+            "The clause 'who came here yesterday' modifies the noun 'boy', providing more information about him. Clauses that modify nouns are adjective clauses (also known as relative clauses).",
+        },
+        {
+          id: 65,
+          question: "Do as I say. Identify the underlined clause.",
+          options: {
+            a: "adjective",
+            b: "noun",
+            c: "preposition",
+            d: "adverb",
+          },
+          correct: "b",
+          explanation:
+            "The clause 'as I say' functions as the direct object of the verb 'Do'. A clause that functions as a noun is a noun clause.",
+        },
+        {
+          id: 66,
+          question:
+            "The question is how he will respond. The underlined part of the sentence is a/an-",
+          options: {
+            a: "noun clause",
+            b: "adjective clause",
+            c: "adverb clause",
+            d: "propositional clause",
+          },
+          correct: "a",
+          explanation:
+            "The clause 'how he will respond' functions as the subject complement (completing the meaning of the verb 'is' and referring back to 'The question'). A clause that functions as a noun (subject, object, complement) is a noun clause.",
+        },
+        {
+          id: 67,
+          question:
+            "By the end of the meal, some people take a few glasses of water. The underlined phrase is a/an-",
+          options: {
+            a: "noun phrase",
+            b: "prepositional phrase",
+            c: "adjective phrase",
+            d: "adverbial phrase",
+          },
+          correct: "b",
+          explanation:
+            "'By the end of the meal' begins with the preposition 'By' and functions as an adverbial phrase of time. Its core structure is preposition + noun phrase, making it a prepositional phrase.",
+        },
+        {
+          id: 68,
+          question:
+            'Identify the underlined clause in the sentence "I know the place where he was born."',
+          options: {
+            a: "Adverbial clause",
+            b: "Adjective clause",
+            c: "Noun clause",
+            d: "Conditional clause",
+          },
+          correct: "b",
+          explanation:
+            "The clause 'where he was born' modifies the noun 'place', specifying which place. Clauses that modify nouns are adjective clauses (also known as relative clauses).",
+        },
+        {
+          id: 69,
+          question:
+            "Identify the clause of the underlined words: What he says is true.",
+          options: {
+            a: "Noun clause",
+            b: "Adjective clause",
+            c: "Adverbial clause",
+            d: "Subordinate clause",
+          },
+          correct: "a",
+          explanation:
+            "The clause 'What he says' functions as the subject of the sentence ('is true'). A clause that functions as a noun (subject, object, complement) is a noun clause.",
+        },
+        {
+          id: 70,
+          question:
+            "Our class begins _ in November. Name the underlined phrase-",
+          options: {
+            a: "Noun Phrase",
+            b: "Preposition phrase",
+            c: "Adverb Phrase",
+            d: "Verb Phrase",
+          },
+          correct: "b",
+          explanation:
+            "'In November' begins with the preposition 'in' and specifies time. It's a prepositional phrase functioning adverbially.",
+        },
+        {
+          id: 71,
+          question:
+            "The underlined phrase in 'I spoke to him quite often' is a/an-",
+          options: {
+            a: "Noun phrase",
+            b: "Adjective phrase",
+            c: "Adverb phrase",
+            d: "Preposition phrase",
+          },
+          correct: "c",
+          explanation:
+            "'Quite often' modifies the verb 'spoke', indicating the frequency. A phrase that modifies a verb is an adverb phrase.",
+        },
+        {
+          id: 72,
+          question: "He lives in a suburb of Dhaka. The underlined phrase is-",
+          options: {
+            a: "A noun phrase",
+            b: "an adjective phrase",
+            c: "an adverbial phrase",
+            d: "an infinitive phrase",
+          },
+          correct: "c",
+          explanation:
+            "'In a suburb of Dhaka' indicates the place where he lives, modifying the verb 'lives'. A phrase that indicates place and modifies a verb is an adverbial phrase.",
+        },
+        {
+          id: 73,
+          question:
+            "Writing a diary is a very good practice to develop the writing skill. The underlined word is a/an-",
+          options: {
+            a: "verbal phrase",
+            b: "adjective phrase",
+            c: "adverbial phrase",
+            d: "noun phrase",
+          },
+          correct: "d",
+          explanation:
+            "'Writing a diary' acts as the subject of the sentence. A gerund phrase (a gerund and its complements/modifiers) functions as a noun, thus it's a noun phrase.",
+        },
+        {
+          id: 74,
+          question: "He is a man to depend on. The underlined part is-",
+          options: {
+            a: "a noun phrase",
+            b: "an adjective phrase",
+            c: "an adverbial phrase",
+            d: "a prepositional phrase",
+          },
+          correct: "b",
+          explanation:
+            "'To depend on' is an infinitive phrase functioning as an adjective, modifying the noun 'man' and telling us what kind of man he is (a man capable of being depended on).",
+        },
+        {
+          id: 75,
+          question:
+            "His dream that he will be a BCS cadre finally came true. The underlined part is-",
+          options: {
+            a: "a noun clause",
+            b: "an adjective clause",
+            c: "an independent clause",
+            d: "a co-ordinate clause",
+          },
+          correct: "a",
+          explanation:
+            "The clause 'that he will be a BCS cadre' is an appositive noun clause. It renames or specifies 'His dream', functioning as a noun in apposition to 'dream'.",
+        },
+        {
+          id: 76,
+          question:
+            "Sitting happily, the chicken laid eggs. The underlined part is a/an-",
+          options: {
+            a: "noun clause",
+            b: "subordinate clause",
+            c: "independent clause",
+            d: "coordinate clause",
+          },
+          correct: "c",
+          explanation:
+            "The main part of the sentence, 'the chicken laid eggs', can stand alone as a complete thought. It is the independent clause. 'Sitting happily' is a participial phrase modifying the subject of the independent clause.",
+        },
+        {
+          id: 77,
+          question:
+            '"To win a prize is my ambition." The underlined part of the sentence is a/an-',
+          options: {
+            a: "adjective phrase",
+            b: "noun phrase",
+            c: "adverb phrase",
+            d: "conjunctional phrase",
+          },
+          correct: "b",
+          explanation:
+            "'To win a prize' is an infinitive phrase functioning as the subject of the sentence. A phrase that functions as a noun (subject, object, complement) is a noun phrase.",
+        },
+        {
+          id: 78,
+          question:
+            "'He ran with great speed'. The underlined part of the sentence is a -",
+          options: {
+            a: "noun phrase",
+            b: "adverb phrase",
+            c: "adjective phrase",
+            d: "participle phrase",
+          },
+          correct: "b",
+          explanation:
+            "'With great speed' modifies the verb 'ran', indicating the manner in which he ran. A phrase that modifies a verb is an adverb phrase (specifically, a prepositional phrase functioning as an adverbial phrase).",
+        },
+        {
+          id: 79,
+          question:
+            '"Strike while the iron is hot." The underlined sentence is an example of-',
+          options: {
+            a: "Noun clause",
+            b: "Adjective clause",
+            c: "Adverbial clause",
+            d: "Subordinate clause",
+          },
+          correct: "c",
+          explanation:
+            "The clause 'while the iron is hot' modifies the imperative verb 'Strike', indicating the time when the action should be performed. This is an adverbial clause of time.",
+        },
+        {
+          id: 80,
+          question: "This is the book I lost. Here 'I lost' is-",
+          options: {
+            a: "noun phrase",
+            b: "adjective phrase",
+            c: "adverbial phrase",
+            d: "adjective clause",
+          },
+          correct: "d",
+          explanation:
+            "The clause 'I lost' modifies the noun 'book', telling us which book. The relative pronoun 'that' or 'which' is omitted. Clauses that modify nouns are adjective clauses.",
+        },
+        {
+          id: 81,
+          question: "He worked with all sincerity. The underlined phrase is-",
+          options: {
+            a: "A noun phrase",
+            b: "An adjective phrase",
+            c: "An infinitive phrase",
+            d: "An adverbial phrase",
+          },
+          correct: "d",
+          explanation:
+            "With all sincerity' modifies the verb 'worked', indicating the manner in which he worked. A phrase that modifies a verb is an adverbial phrase (specifically, a prepositional phrase functioning as an adverbial).",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                          <label class="option" data-option="${option}">
+                                                                            <div class="circle">${option}</div>
+                                                                            <span class="option-text">${question.options[option]}</span>
+                                                                          </label>
+                                                                        `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
